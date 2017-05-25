@@ -24,11 +24,11 @@ connection.on('connect', function(err) {
     }
     else{
         console.log('test');
-        queryTodo();
+        //queryTodo();
     }
 });
-function queryTodo(){
-    var time = getTime();
+var getInfo = function(){
+        var time = getTime();
     
     var request = new Request(
         "SELECT td.text, td.GroupId, ug.UserId FROM TodoItem td LEFT JOIN UserChatGroups ug ON ug.ChatGroupId = td.GroupId LEFT JOIN Users u ON ug.UserId = u.Id WHERE td.sendTime ='"+time+"'",
@@ -57,34 +57,87 @@ function queryTodo(){
                     group = column.value;
         });
         message.push([text,user,group]);
-        //console.log("this is info - %s\t%s", UserId, payload);
-           // notificationHubService.gcm.send(null, payload, function (error) {
-            //             if (error) { 
-              //               console.log('failed');
-               //          } else {
-                 //            console.log('success');
-               //          }
-                //     });
+        user = "_UserId:" + user;
+        var payload = 
+        {
+            data:
+            {
+                "message":text
+            }
+        };
+        console.log("this is info - %s\t%s", user, payload);
+            notificationHubService.gcm.send(user, payload, function (error) {
+                         if (error) { 
+                             console.log('failed');
+                         } else {
+                             console.log('success');
+                         }
+                     });
       
         i++;
     });
     request.on('doneProc', function (rowCount, more, returnStatus, rows) {
-        checkSchedule(message);
+       // checkSchedule(message);
+       console.log("done - returning - "+ message);
+       return message;
     });
     connection.execSql(request);
     
     //connection.OnFetchComplete(); 
-   
+};
+ 
+
+function fetchGameList(data) {
+    //var ret;
+    console.log('got in');
+ var request = new Request(
+        "SELECT * from Schedule",
+        function(err, rowCount, rows) {
+           // console.log('inside');
+            console.log(rowCount + ' row(s) returned');
+           //callback(null, rows); 
+           // console.log(rowCount + ' row(s) returned for time :'+time);
+        }
+    ).on('row', function(columns) {
+        columns.forEach(function(column) {
+                console.log(column.metadata.colName + " - colName and column.value - " + column.value);
+               //checkSchedule(column.metadata.colName);
+               // if(column.metadata.colName == "text")
+                 //   text = column.value;
+
+               // if(column.metadata.colName == "UserId")
+                //    user = column.value;
+                    
+                //if(column.metadata.colName == "GroupId")
+                //    group = column.value;
+        });
+    });
+    request.on('doneProc', function (rowCount, more, returnStatus, rows) {
+       // checkSchedule(message);
+       return message;
+    });
+    console.log('got out');
+    connection.execSql(request);
+   // connection.query("SELECT * from tbl", function(err, rows, fields) {
+     //   if (err) {
+            // You must `return` in this branch to avoid using callback twice.
+      //      return callback(err);
+       // }
+
+        // Do something with `rows` and `fields` and assign a value to ret.
+      //  console.log("selecting=="+rows);
+      //  callback(null, ret);
+    //});
 }
-function checkmessage(msg){
-    if(msg!=null)
-    {
+//function checkmessage(msg){
+ //   if(msg!=null)
+  //  {
         
-        console.log(msg[0]);
-    }
-    else
-        console.log('its null');
-}
+  //      console.log(msg[0]);
+   // }
+   // else
+   //     console.log('its null');
+//zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz}
 function checkSchedule(msg){    
     if(msg!=null)
     {        
@@ -106,13 +159,14 @@ function querySchedule(groupId)
     weekday[5] = "Friday";
     weekday[6] = "Saturday";
     var n = weekday[d.getDay()];
+    
     var request1 = new Request(
             "SELECT "+n+" FROM Schedule WHERE Id ='"+groupId[2]+"'",
             function(err1, rowCount1, rows1) {           
                 console.log(rowCount1 + '  =-== returned for group :'+groupId[2]);
             }
         );
-        //console.log("='"+groupId[2]+"'");
+        console.log("SELECT "+n+" FROM Schedule WHERE Id ='"+groupId[2]+"'");
         request1.on('row', function(columns) {
             columns.forEach(function(column) {
                     console.log(column.metadata.colName + " - colName and column.value - " + column.value);   
@@ -138,4 +192,5 @@ function getTime() {
 
    
 
-module.exports.queryTodo = queryTodo;
+module.exports.getInfo = getInfo;
+module.exports.fetchGameList = fetchGameList;
